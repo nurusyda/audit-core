@@ -8,8 +8,8 @@ How the pieces fit together, and why the semantic layer cannot lie to you.
 
 ```mermaid
 graph TD
-    S["Discussion until conclusion"] --> SPEC["`.audit/specs/NNN-slug.md`<br/>problem · decision · rejected<br/>acceptance criteria · non-goals"]
-    SPEC --> DEC["`.audit/decisions.yaml`<br/>invariants that OUTLIVE this spec"]
+    S["Discussion until conclusion"] --> SPEC[".audit/specs/NNN-slug.md<br/>problem · decision · rejected<br/>acceptance criteria · non-goals"]
+    SPEC --> DEC[".audit/decisions.yaml<br/>invariants that OUTLIVE this spec"]
     SPEC --> BUILD["Agent builds<br/>loads enabled SKILL.md files"]
 
     BUILD --> GB{"GATE B"}
@@ -47,12 +47,12 @@ Two independent engines. Both must pass.
 ```mermaid
 graph LR
     subgraph LOCAL["audit.py — LOCAL (reads the diff)"]
-        CFG1["`.audit/config.yaml`<br/>skills + frameworks"] --> SEL["select controls"]
+        CFG1[".audit/config.yaml<br/>skills + frameworks"] --> SEL["select controls"]
         CTRL["controls/*.yaml<br/>59 controls"] --> SEL
         FW["mappings/frameworks.yaml<br/>OWASP·SOC2·PCI·GDPR·NIST"] -->|filter| SEL
         SEL --> AD["adapters/*.yaml<br/>bind control to tool"]
         AD --> RUN["run scanners"]
-        RUN --> LR["`.audit/last-run.json`"]
+        RUN --> LR[".audit/last-run.json"]
     end
 
     subgraph REL["coherence.py — RELATIONAL (reads the whole repo)"]
@@ -60,9 +60,13 @@ graph LR
         MODEL --> C510["CTL-0510 layering"]
         MODEL --> C511["CTL-0511 reverse deps"]
         MODEL --> C512["CTL-0512 duplication"]
-        DECY["`.audit/decisions.yaml`"] --> C513["CTL-0513 decisions"]
+        DECY[".audit/decisions.yaml"] --> C513["CTL-0513 decisions"]
         MODEL --> C514["CTL-0514 orphans"]
-        C510 & C511 & C512 & C513 & C514 --> CJ["`.audit/coherence.json`"]
+        C510 --> CJ[".audit/coherence.json"]
+    C511 --> CJ
+    C512 --> CJ
+    C513 --> CJ
+    C514 --> CJ
     end
 
     LR --> GATES["gates.py check"]
@@ -88,15 +92,16 @@ real files before a human sees it.
 
 ```mermaid
 graph TD
-    START["semantic.py"] --> EN{"`semantic_review.enabled`?"}
+    START["semantic.py"] --> EN{"semantic_review.enabled?"}
     EN -->|false| OFF["skip — the default"]
-    EN -->|true| EX["apply `exclude_paths`<br/>cases/ evidence/ *.E01 .env"]
+    EN -->|true| EX["apply exclude_paths<br/>cases/ evidence/ *.E01 .env"]
 
-    EX --> MODE{"`send_source`?"}
+    EX --> MODE{"send_source?"}
     MODE -->|false| SIG["signatures only<br/>no bodies leave the machine"]
     MODE -->|true| FULL["full source excerpts"]
 
-    SIG & FULL --> CTX["context = diff + symbol table<br/>symbol table comes from coherence.py,<br/>NOT from the model"]
+    SIG --> CTX["context = diff + symbol table<br/>symbol table comes from coherence.py,<br/>NOT from the model"]
+    FULL --> CTX
     CTX --> API["POST /v1/chat/completions<br/>DeepSeek · Ollama · any OpenAI-compatible"]
     API --> JSON["parse strict JSON<br/>each claim MUST carry exact_quote"]
 
