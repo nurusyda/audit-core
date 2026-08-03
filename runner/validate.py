@@ -106,6 +106,10 @@ owners = {c.get("owner_skill") for c, _ in controls.values()}
 for o in sorted(owners - skill_dirs):
     errors.append(f"control owner_skill '{o}' has no skills/{o}/SKILL.md")
 for s in sorted(skill_dirs - owners):
+    # Workflow skills legitimately own no controls; they declare it explicitly.
+    md = (CORE / "skills" / s / "SKILL.md")
+    if md.exists() and "owns_controls: none" in md.read_text():
+        continue
     warnings.append(f"skill '{s}' owns no controls — enabling it does nothing")
 for s in sorted(skill_dirs):
     if not (CORE / "skills" / s / "SKILL.md").exists():
