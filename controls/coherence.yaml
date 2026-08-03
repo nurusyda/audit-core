@@ -1,0 +1,100 @@
+# Coherence controls. These are RELATIONAL — they compare the change against code the
+# diff does not touch. Everything else in this repo is local to the diff.
+# Owned by principal-architect. Run by runner/coherence.py, not by audit.py's runner.
+
+- id: CTL-0510
+  title: Import layering is respected
+  why: >
+    Declare allowed import directions once and every violation afterwards is free to
+    detect. This is the cheapest defence against architectural rot that exists.
+  domain: architecture
+  tier: tier1
+  owner_skill: principal-architect
+  severity: high
+  detect:
+    kind: command
+    command: python3 $AUDIT_CORE/runner/coherence.py
+  blocking: true
+  remediation: rubrics/coherence-review.md
+  introduced: v0.2.0
+
+- id: CTL-0511
+  title: Callers updated when a signature changes
+  why: >
+    The single most common way a locally-correct edit breaks the system as a whole.
+    The change passes its own tests; the caller three modules away does not.
+  domain: architecture
+  tier: tier1
+  owner_skill: principal-architect
+  severity: critical
+  detect:
+    kind: command
+    command: python3 $AUDIT_CORE/runner/coherence.py
+  blocking: true
+  remediation: rubrics/coherence-review.md
+  introduced: v0.2.0
+
+- id: CTL-0512
+  title: No new structural duplication
+  why: >
+    Copy-paste-then-rename produces identical control flow under different names.
+    Pre-existing duplicates are not the failure; adding to them is.
+  domain: architecture
+  tier: tier2
+  owner_skill: principal-architect
+  severity: medium
+  detect:
+    kind: command
+    command: python3 $AUDIT_CORE/runner/coherence.py
+  blocking: false
+  remediation: rubrics/coherence-review.md
+  introduced: v0.2.0
+
+- id: CTL-0513
+  title: Recorded architectural decisions are not violated
+  why: >
+    Specs are per-work-item and evaporate. Decisions accumulate. This is what makes
+    "does this clash with what we already decided" answerable at all, rather than
+    depending on whoever happens to remember.
+  domain: architecture
+  tier: tier1
+  owner_skill: principal-architect
+  severity: high
+  detect:
+    kind: command
+    command: python3 $AUDIT_CORE/runner/coherence.py
+  blocking: true
+  remediation: rubrics/coherence-review.md
+  introduced: v0.2.0
+
+- id: CTL-0514
+  title: No orphaned definitions left behind
+  why: >
+    A replacement that left the original in place. Dead code the next person will find
+    and use, not knowing it was superseded.
+  domain: architecture
+  tier: tier2
+  owner_skill: principal-architect
+  severity: low
+  detect:
+    kind: command
+    command: python3 $AUDIT_CORE/runner/coherence.py
+  blocking: false
+  remediation: rubrics/coherence-review.md
+  introduced: v0.2.0
+
+- id: CTL-0515
+  title: Semantic conflict review (LLM, grounded)
+  why: >
+    Catches logic that duplicates existing behaviour without duplicating its structure —
+    the case AST hashing cannot see. Every claim is verified against the real file
+    before a human sees it; unverified claims are discarded and counted.
+  domain: architecture
+  tier: tier3
+  owner_skill: principal-architect
+  severity: medium
+  type: automated
+  detect:
+    kind: rubric
+    rubric: rubrics/coherence-review.md
+  introduced: v0.2.0

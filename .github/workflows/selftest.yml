@@ -11,6 +11,9 @@ jobs:
       - run: pip install pyyaml==6.0.2
       - name: Validate controls, adapters, rubrics, frameworks
         run: python3 runner/validate.py
+      - name: Grounding verifier regression suite
+        run: python3 tests/test_grounding.py
+
       - name: Smoke-test the runner
         run: |
           git config user.email ci@test && git config user.name CI

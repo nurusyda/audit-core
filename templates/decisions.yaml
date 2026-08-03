@@ -1,0 +1,38 @@
+# Architectural decision registry — append-only.
+#
+# Specs are per-work-item and evaporate once the work ships. Decisions ACCUMULATE.
+# This file is what makes "does this clash with what we decided before" answerable,
+# instead of depending on whoever happens to remember the conversation.
+#
+# Rules:
+#   - Never delete an entry. Supersede it, so the history stays readable.
+#   - `detect` is optional. With it, the decision is enforced mechanically forever at
+#     zero cost. Without it, it surfaces for human review in gate A. Both beat memory.
+#   - Keep `invariant` to one sentence. If it needs a paragraph, it is two decisions.
+
+decisions: []
+
+# Worked examples — delete these:
+#
+# decisions:
+#   - id: DEC-0001
+#     decided: 2026-08-03
+#     spec: 001-billing
+#     invariant: "All monetary values are Decimal. Never float."
+#     scope: ["src/billing/**", "src/orders/**"]
+#     detect: "float\\(|:\\s*float\\b"
+#     rationale: "Float rounding on currency produced a 3-cent reconciliation drift."
+#
+#   - id: DEC-0002
+#     decided: 2026-08-03
+#     invariant: "Authorisation is enforced only in require_user(); handlers never
+#                 check roles inline."
+#     scope: ["src/api/**"]
+#     detect: "if\\s+user\\.(role|is_admin)"
+#
+#   - id: DEC-0003
+#     decided: 2026-08-04
+#     invariant: "HTTP calls go through clients/http.py — never requests.* directly."
+#     scope: ["src/**"]
+#     detect: "^\\s*import requests|requests\\.(get|post|put|delete)\\("
+#     supersedes: DEC-0002   # example only; supersede when a rule is replaced
