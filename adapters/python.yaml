@@ -1,0 +1,28 @@
+# Python stack adapter. Controls never name a language; this file is the binding.
+name: python
+detect:
+  files: ["pyproject.toml", "requirements.txt", "setup.py", "Pipfile"]
+commands:
+  sast_injection:        "semgrep --config p/python --severity ERROR --error --quiet {{files}}"
+  sast_command_injection: "semgrep --config r/python.lang.security.audit.dangerous-subprocess-use --error --quiet {{files}}"
+  sast_weak_crypto:      "bandit -q -f json -r {{files}} --tests B303,B304,B305,B324,B505"
+  sast_weak_random:      "bandit -q -f json -r {{files}} --tests B311"
+  sast_xss:              "semgrep --config r/python.flask.security --config r/python.django.security --error --quiet {{files}}"
+  sast_deserialization:  "bandit -q -f json -r {{files}} --tests B301,B302,B506"
+  sast_log_leak:         "semgrep --config r/python.lang.security.audit.logging --error --quiet {{files}}"
+  sast_timeouts:         "semgrep --config r/python.requests.best-practice.use-timeout --error --quiet {{files}}"
+  dependency_audit:      "pip-audit --strict --progress-spinner off"
+  lockfile_present:      "test -f poetry.lock -o -f requirements.txt -o -f Pipfile.lock -o -f uv.lock"
+  typecheck:             "mypy --no-error-summary ."
+  lint:                  "ruff check ."
+  test:                  "pytest -q"
+  coverage:              "pytest -q --cov --cov-report=json:.audit/reports/coverage.json"
+  migration_check:       "python -m alembic check 2>/dev/null || echo SKIP_NO_ALEMBIC"
+  api_diff:              "SKIP"
+  header_check:          "SKIP"
+  a11y_scan:             "SKIP"
+  bundle_size:           "SKIP"
+  lighthouse:            "SKIP"
+  load_test:             "SKIP"
+  ci_timing:             "SKIP"
+install_hint: "pip install semgrep bandit pip-audit mypy ruff pytest pytest-cov"

@@ -1,0 +1,172 @@
+# Accessibility + frontend performance.
+# WCAG is the a11y join key and is unusually well suited to automation — axe-core maps
+# directly onto success criteria. Note the honest ceiling: automated a11y testing catches
+# roughly 30-40% of real WCAG violations. The rest is tier3 and manual.
+
+- id: CTL-0100
+  title: No axe-core violations at serious or critical impact
+  why: >
+    These are the ones that hard-block a screen reader user: missing form labels, empty
+    buttons, invalid ARIA. Not cosmetic — they make the feature unusable.
+  domain: accessibility
+  tier: tier1
+  owner_skill: senior-uiux
+  severity: high
+  wcag: ["1.1.1", "1.3.1", "4.1.2"]
+  detect:
+    kind: command
+    adapter_key: a11y_scan
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0101
+  title: Text contrast meets WCAG AA (4.5:1 body, 3:1 large)
+  why: >
+    Low contrast is the single most common a11y failure on the web and affects far more
+    people than any assistive-tech issue — anyone on a phone in sunlight.
+  domain: accessibility
+  tier: tier1
+  owner_skill: senior-uiux
+  severity: high
+  wcag: ["1.4.3"]
+  detect:
+    kind: command
+    adapter_key: a11y_scan
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0102
+  title: All interactive functionality reachable and operable by keyboard
+  why: >
+    Keyboard access is the substrate every assistive technology sits on. A div with an
+    onClick and no tabindex or role does not exist to a screen reader.
+  domain: accessibility
+  tier: tier3
+  owner_skill: senior-uiux
+  severity: high
+  wcag: ["2.1.1", "2.4.7"]
+  detect:
+    kind: rubric
+    rubric: rubrics/ux-heuristics.md
+  introduced: v0.1.0
+
+- id: CTL-0103
+  title: Focus order is logical and focus is never trapped
+  why: >
+    Modals that don't trap focus leak the user into the page behind. Modals that trap it
+    permanently strand them. Both are common; both are testable by hand in 30 seconds.
+  domain: accessibility
+  tier: tier3
+  owner_skill: senior-uiux
+  severity: high
+  wcag: ["2.4.3", "2.1.2"]
+  detect:
+    kind: rubric
+    rubric: rubrics/ux-heuristics.md
+  introduced: v0.1.0
+
+- id: CTL-0104
+  title: Motion respects prefers-reduced-motion
+  why: >
+    Parallax and large transitions trigger genuine nausea and migraine in vestibular
+    disorders. One media query fixes it.
+  domain: accessibility
+  tier: tier1
+  owner_skill: senior-uiux
+  severity: medium
+  wcag: ["2.3.3"]
+  detect:
+    kind: command
+    command: "grep -rq 'prefers-reduced-motion' {{files}} || echo 'NO_REDUCED_MOTION_QUERY'"
+  blocking: false
+  introduced: v0.1.0
+
+- id: CTL-0110
+  title: JS bundle size does not regress
+  why: >
+    Bundle size grows monotonically unless something pushes back. Every 100KB of JS is
+    roughly a second of CPU on a low-end Android device.
+  domain: frontend
+  tier: tier2
+  owner_skill: senior-frontend
+  severity: medium
+  detect:
+    kind: metric
+    metric: bundle_kb_gzip
+    adapter_key: bundle_size
+    extract: "json:$.total_gzip_kb"
+    budget:
+      mode: ratchet
+      direction: lower_is_better
+      tolerance_pct: 3
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0111
+  title: Largest Contentful Paint within budget
+  why: >
+    LCP is what the user experiences as "did it load". Above 2.5s, bounce rate climbs sharply.
+  domain: frontend
+  tier: tier2
+  owner_skill: senior-frontend
+  severity: medium
+  detect:
+    kind: metric
+    metric: lcp_ms
+    adapter_key: lighthouse
+    extract: "json:$.audits.largest-contentful-paint.numericValue"
+    budget:
+      mode: absolute
+      direction: lower_is_better
+      limit: 2500
+  blocking: false
+  introduced: v0.1.0
+
+- id: CTL-0112
+  title: Cumulative Layout Shift within budget
+  why: >
+    Layout shift is why people tap the wrong button. Almost always un-dimensioned images
+    or late-injected banners.
+  domain: frontend
+  tier: tier2
+  owner_skill: senior-frontend
+  severity: medium
+  detect:
+    kind: metric
+    metric: cls
+    adapter_key: lighthouse
+    extract: "json:$.audits.cumulative-layout-shift.numericValue"
+    budget:
+      mode: absolute
+      direction: lower_is_better
+      limit: 0.1
+  blocking: false
+  introduced: v0.1.0
+
+- id: CTL-0113
+  title: No new render-blocking third-party scripts
+  why: >
+    A synchronous third-party tag makes your uptime a function of their uptime, and their
+    latency your latency.
+  domain: frontend
+  tier: tier3
+  owner_skill: senior-frontend
+  severity: medium
+  detect:
+    kind: rubric
+    rubric: rubrics/frontend-review.md
+  introduced: v0.1.0
+
+- id: CTL-0114
+  title: Loading, empty, and error states exist for every async view
+  why: >
+    The three states everyone forgets. Their absence is the difference between "slow" and
+    "broken" in the user's mind.
+  domain: uiux
+  tier: tier3
+  owner_skill: senior-uiux
+  severity: medium
+  detect:
+    kind: rubric
+    rubric: rubrics/ux-heuristics.md
+  introduced: v0.1.0

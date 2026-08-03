@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Audit Control",
+  "description": "One auditable requirement. Framework-agnostic; frameworks attach via mappings/.",
+  "type": "object",
+  "required": ["id", "title", "domain", "tier", "owner_skill", "severity"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^CTL-[0-9]{4}$",
+      "description": "Stable forever. Never reuse a retired id."
+    },
+    "title": { "type": "string", "maxLength": 120 },
+    "why": {
+      "type": "string",
+      "description": "Plain-language consequence if violated. Shown in findings. Required in practice — a control nobody understands gets waived."
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["security", "accessibility", "frontend", "backend", "devops", "data", "quality", "uiux", "architecture"]
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["tier1", "tier2", "tier3"],
+      "description": "tier1=deterministic pass/fail. tier2=metric vs budget. tier3=judgment, advisory only."
+    },
+    "owner_skill": {
+      "type": "string",
+      "description": "Which specialist owns this control. Toggling that skill toggles this control."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "info"]
+    },
+    "cwe": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^CWE-[0-9]+$" },
+      "description": "The join key for security. Scanners emit it; frameworks map to it."
+    },
+    "wcag": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "WCAG success criterion, e.g. '1.4.3'."
+    },
+    "detect": {
+      "type": "object",
+      "description": "How to verify. Omit entirely for type=attestation.",
+      "properties": {
+        "kind": { "type": "string", "enum": ["command", "metric", "rubric", "attestation"] },
+        "command": {
+          "type": "string",
+          "description": "Shell command. Resolved per-stack via adapters/. Use {{files}} for changed-file injection."
+        },
+        "adapter_key": {
+          "type": "string",
+          "description": "Look the command up in the active stack adapter instead of hardcoding it."
+        },
+        "metric": { "type": "string", "description": "tier2 only: metric name recorded in baselines." },
+        "extract": {
+          "type": "string",
+          "description": "tier2 only: regex with one capture group, or 'json:$.path.to.value'."
+        },
+        "budget": {
+          "type": "object",
+          "properties": {
+            "mode": { "type": "string", "enum": ["ratchet", "absolute"] },
+            "direction": { "type": "string", "enum": ["lower_is_better", "higher_is_better"] },
+            "tolerance_pct": { "type": "number", "description": "ratchet mode: allowed drift vs baseline." },
+            "limit": { "type": "number", "description": "absolute mode: hard threshold." }
+          }
+        },
+        "rubric": { "type": "string", "description": "tier3 only: path under rubrics/." }
+      }
+    },
+    "type": {
+      "type": "string",
+      "enum": ["automated", "attestation"],
+      "default": "automated",
+      "description": "attestation = human process control (access reviews, training). Surfaces as a checklist. NEVER blocks a build."
+    },
+    "scope": {
+      "type": "object",
+      "description": "Restrict when this control applies.",
+      "properties": {
+        "stacks": { "type": "array", "items": { "type": "string" } },
+        "paths": { "type": "array", "items": { "type": "string" } },
+        "exclude_paths": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "blocking": {
+      "type": "boolean",
+      "default": true,
+      "description": "tier3 controls are forced non-blocking by the runner regardless of this value."
+    },
+    "remediation": { "type": "string", "description": "Path under rubrics/ or a URL." },
+    "introduced": { "type": "string", "description": "audit-core version this control landed in." },
+    "retired": { "type": "string", "description": "Set instead of deleting. Runner skips retired controls." }
+  }
+}

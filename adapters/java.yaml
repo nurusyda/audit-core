@@ -1,0 +1,27 @@
+name: java
+detect:
+  files: ["pom.xml", "build.gradle", "build.gradle.kts"]
+commands:
+  sast_injection:        "semgrep --config p/java --severity ERROR --error --quiet {{files}}"
+  sast_command_injection: "semgrep --config r/java.lang.security.audit.command-injection --error --quiet {{files}}"
+  sast_weak_crypto:      "semgrep --config r/java.lang.security.audit.crypto --error --quiet {{files}}"
+  sast_weak_random:      "semgrep --config r/java.lang.security.audit.crypto.weak-random --error --quiet {{files}}"
+  sast_xss:              "semgrep --config r/java.lang.security.audit.xss --error --quiet {{files}}"
+  sast_deserialization:  "semgrep --config r/java.lang.security.audit.object-deserialization --error --quiet {{files}}"
+  sast_log_leak:         "semgrep --config p/java --error --quiet {{files}}"
+  sast_timeouts:         "semgrep --config p/java --error --quiet {{files}}"
+  dependency_audit:      "mvn -q org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7"
+  lockfile_present:      "test -f pom.xml -o -f gradle.lockfile"
+  typecheck:             "mvn -q compile"
+  lint:                  "mvn -q checkstyle:check"
+  test:                  "mvn -q test"
+  coverage:              "mvn -q jacoco:report"
+  migration_check:       "mvn -q flyway:validate 2>/dev/null || echo SKIP_NO_FLYWAY"
+  api_diff:              "SKIP"
+  header_check:          "SKIP"
+  a11y_scan:             "SKIP"
+  bundle_size:           "SKIP"
+  lighthouse:            "SKIP"
+  load_test:             "SKIP"
+  ci_timing:             "SKIP"
+install_hint: "Maven/Gradle plugins declared in the build file."

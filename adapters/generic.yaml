@@ -1,0 +1,14 @@
+# Fallback when no stack is detected. Stack-agnostic tools only.
+# Never fails silently: unresolvable checks are reported as SKIPPED, not PASSED.
+name: generic
+fallback: true
+detect:
+  files: []
+commands:
+  dependency_audit: "trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 ."
+  lockfile_present: "SKIP"
+  lint: "SKIP"
+  typecheck: "SKIP"
+  test: "SKIP"
+  coverage: "SKIP"
+install_hint: "Install trivy. Then add a proper adapter for your stack."

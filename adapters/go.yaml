@@ -1,0 +1,27 @@
+name: go
+detect:
+  files: ["go.mod"]
+commands:
+  sast_injection:        "gosec -quiet -severity high -include=G201,G202 ./..."
+  sast_command_injection: "gosec -quiet -include=G204 ./..."
+  sast_weak_crypto:      "gosec -quiet -include=G401,G402,G403,G404,G505 ./..."
+  sast_weak_random:      "gosec -quiet -include=G404 ./..."
+  sast_xss:              "semgrep --config p/golang --error --quiet {{files}}"
+  sast_deserialization:  "semgrep --config p/golang --error --quiet {{files}}"
+  sast_log_leak:         "semgrep --config p/golang --error --quiet {{files}}"
+  sast_timeouts:         "semgrep --config r/go.lang.security.audit.net.use-tls --error --quiet {{files}}"
+  dependency_audit:      "govulncheck ./..."
+  lockfile_present:      "test -f go.sum"
+  typecheck:             "go build ./..."
+  lint:                  "golangci-lint run"
+  test:                  "go test ./... -count=1"
+  coverage:              "go test ./... -coverprofile=.audit/reports/cover.out"
+  migration_check:       "SKIP"
+  api_diff:              "SKIP"
+  header_check:          "SKIP"
+  a11y_scan:             "SKIP"
+  bundle_size:           "SKIP"
+  lighthouse:            "SKIP"
+  load_test:             "SKIP"
+  ci_timing:             "SKIP"
+install_hint: "go install github.com/securego/gosec/v2/cmd/gosec@latest golang.org/x/vuln/cmd/govulncheck@latest"

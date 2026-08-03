@@ -1,0 +1,327 @@
+# Security controls. CWE is the join key — frameworks attach in mappings/frameworks.yaml.
+# Seeded from OWASP ASVS v4.0.3 L1/L2, filtered to what is actually machine-verifiable.
+
+- id: CTL-0001
+  title: No hardcoded secrets in tracked files or git history
+  why: >
+    A credential committed to git is compromised the instant it lands, even if the next
+    commit deletes it. History is public to anyone with clone access, forever.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: critical
+  cwe: [CWE-798, CWE-540]
+  detect:
+    kind: command
+    command: gitleaks detect --no-banner --redact --exit-code 1
+  blocking: true
+  remediation: rubrics/secrets-remediation.md
+  introduced: v0.1.0
+
+- id: CTL-0002
+  title: No SQL built by string concatenation or interpolation
+  why: >
+    Attacker-controlled input reaching a query as code lets them read, alter, or drop
+    anything the database user can touch. Still the highest-impact web bug there is.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: critical
+  cwe: [CWE-89]
+  detect:
+    kind: command
+    adapter_key: sast_injection
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0003
+  title: No shell execution with unsanitised input
+  why: >
+    Command injection is usually full remote code execution. One unescaped variable in a
+    shell string is the whole box.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: critical
+  cwe: [CWE-78, CWE-77]
+  detect:
+    kind: command
+    adapter_key: sast_command_injection
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0004
+  title: No known-vulnerable dependencies at high or critical severity
+  why: >
+    Most breaches walk in through a dependency nobody chose to audit. This is the cheapest
+    control in the entire set and it catches real attacks.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: high
+  cwe: [CWE-1395, CWE-937]
+  detect:
+    kind: command
+    adapter_key: dependency_audit
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0005
+  title: Dependency lockfile present and committed
+  why: >
+    Without a lockfile you cannot reproduce a build, cannot audit what actually shipped,
+    and a compromised transitive package can appear silently between two deploys.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: high
+  cwe: [CWE-1357]
+  detect:
+    kind: command
+    adapter_key: lockfile_present
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0006
+  title: Authentication decisions are not made client-side
+  why: >
+    Anything the browser decides, the user decides. Hiding a button is not access control.
+  domain: security
+  tier: tier3
+  owner_skill: senior-appsec
+  severity: critical
+  cwe: [CWE-602, CWE-285]
+  detect:
+    kind: rubric
+    rubric: rubrics/authz-review.md
+  introduced: v0.1.0
+
+- id: CTL-0007
+  title: Object access is authorised against the requesting identity
+  why: >
+    Broken object-level authorisation — changing an id in a URL and getting someone else's
+    data. The single most common serious API bug, and no scanner reliably finds it.
+  domain: security
+  tier: tier3
+  owner_skill: senior-appsec
+  severity: critical
+  cwe: [CWE-639, CWE-284]
+  detect:
+    kind: rubric
+    rubric: rubrics/authz-review.md
+  introduced: v0.1.0
+
+- id: CTL-0008
+  title: Passwords stored with a memory-hard KDF
+  why: >
+    Fast hashes (MD5, SHA-family, unsalted anything) are crackable at billions of guesses
+    per second on commodity GPUs. Use argon2id, scrypt, or bcrypt.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: critical
+  cwe: [CWE-916, CWE-327, CWE-759]
+  detect:
+    kind: command
+    adapter_key: sast_weak_crypto
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0009
+  title: No use of deprecated or broken cryptographic primitives
+  why: >
+    DES, RC4, MD5 for integrity, ECB mode, static IVs. Each has published practical breaks.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: high
+  cwe: [CWE-327, CWE-326, CWE-329]
+  detect:
+    kind: command
+    adapter_key: sast_weak_crypto
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0010
+  title: Randomness for security purposes uses a CSPRNG
+  why: >
+    Session tokens, password reset links, and nonces from Math.random() or random.random()
+    are predictable. Attackers have replayed these in the wild.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: high
+  cwe: [CWE-338, CWE-330]
+  detect:
+    kind: command
+    adapter_key: sast_weak_random
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0011
+  title: Untrusted data is not rendered as HTML without escaping
+  why: >
+    Cross-site scripting gives an attacker the victim's full session. dangerouslySetInnerHTML,
+    v-html, and |safe are the usual entry points.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: high
+  cwe: [CWE-79]
+  detect:
+    kind: command
+    adapter_key: sast_xss
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0012
+  title: Deserialisation of untrusted input is not performed with unsafe loaders
+  why: >
+    pickle.loads, yaml.load without SafeLoader, and Java native deserialisation on user
+    input are direct remote code execution.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: critical
+  cwe: [CWE-502]
+  detect:
+    kind: command
+    adapter_key: sast_deserialization
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0013
+  title: Server-side requests to user-supplied URLs are restricted
+  why: >
+    SSRF turns your server into the attacker's proxy — cloud metadata endpoints, internal
+    admin panels, anything your network can reach.
+  domain: security
+  tier: tier3
+  owner_skill: senior-appsec
+  severity: high
+  cwe: [CWE-918]
+  detect:
+    kind: rubric
+    rubric: rubrics/authz-review.md
+  introduced: v0.1.0
+
+- id: CTL-0014
+  title: Security headers are set on HTML responses
+  why: >
+    CSP, HSTS, X-Content-Type-Options, and Referrer-Policy convert several classes of bug
+    from exploitable into merely embarrassing. Nearly free.
+  domain: security
+  tier: tier1
+  owner_skill: senior-appsec
+  severity: medium
+  cwe: [CWE-693, CWE-1021]
+  detect:
+    kind: command
+    adapter_key: header_check
+  blocking: false
+  introduced: v0.1.0
+
+- id: CTL-0015
+  title: Errors returned to clients do not leak stack traces or internals
+  why: >
+    Stack traces hand an attacker your framework versions, file paths, and query structure.
+    Free reconnaissance.
+  domain: security
+  tier: tier3
+  owner_skill: senior-appsec
+  severity: medium
+  cwe: [CWE-209, CWE-497]
+  detect:
+    kind: rubric
+    rubric: rubrics/error-handling.md
+  introduced: v0.1.0
+
+- id: CTL-0016
+  title: Container images have no critical OS-level CVEs
+  why: >
+    A patched app on a three-year-old base image is still a three-year-old attack surface.
+  domain: security
+  tier: tier1
+  owner_skill: senior-devops
+  severity: high
+  cwe: [CWE-1395]
+  scope:
+    paths: ["**/Dockerfile", "**/*.dockerfile"]
+  detect:
+    kind: command
+    command: trivy image --severity CRITICAL --exit-code 1 --no-progress "$IMAGE_REF"
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0017
+  title: Authentication and authorisation failures are logged
+  why: >
+    You cannot investigate what you did not record. Absence of auth logs is the reason
+    breach dwell time is measured in months.
+  domain: security
+  tier: tier3
+  owner_skill: senior-appsec
+  severity: medium
+  cwe: [CWE-778]
+  detect:
+    kind: rubric
+    rubric: rubrics/observability.md
+  introduced: v0.1.0
+
+- id: CTL-0018
+  title: Rate limiting applied to authentication and expensive endpoints
+  why: >
+    Without it, credential stuffing and resource exhaustion are trivially cheap for an
+    attacker and expensive for you.
+  domain: security
+  tier: tier3
+  owner_skill: senior-backend
+  severity: high
+  cwe: [CWE-307, CWE-770]
+  detect:
+    kind: rubric
+    rubric: rubrics/api-design.md
+  introduced: v0.1.0
+
+# ---- Attestation controls: real requirements, but no scanner can check them. ----
+# These surface as a checklist at review time and NEVER block a build.
+
+- id: CTL-0090
+  title: Access review performed for production systems this quarter
+  domain: security
+  tier: tier3
+  type: attestation
+  owner_skill: senior-appsec
+  severity: medium
+  why: Dormant accounts of departed staff are a standard initial access vector.
+  introduced: v0.1.0
+
+- id: CTL-0091
+  title: Incident response plan exists and has been exercised in the last 12 months
+  domain: security
+  tier: tier3
+  type: attestation
+  owner_skill: senior-devops
+  severity: medium
+  why: An untested plan is a document, not a capability.
+  introduced: v0.1.0
+
+- id: CTL-0092
+  title: Backups exist for production data and a restore has been tested
+  domain: security
+  tier: tier3
+  type: attestation
+  owner_skill: senior-devops
+  severity: high
+  why: An untested backup is a hope. Restore is the only thing that counts.
+  introduced: v0.1.0
+
+- id: CTL-0093
+  title: Data processing inventory is current for personal data
+  domain: security
+  tier: tier3
+  type: attestation
+  owner_skill: senior-data
+  severity: medium
+  why: Required by GDPR Art. 30. Also the prerequisite for answering a deletion request.
+  introduced: v0.1.0

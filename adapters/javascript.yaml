@@ -1,0 +1,28 @@
+# JavaScript / TypeScript stack adapter.
+name: javascript
+detect:
+  files: ["package.json"]
+commands:
+  sast_injection:        "semgrep --config p/javascript --severity ERROR --error --quiet {{files}}"
+  sast_command_injection: "semgrep --config r/javascript.lang.security.detect-child-process --error --quiet {{files}}"
+  sast_weak_crypto:      "semgrep --config r/javascript.lang.security.audit.crypto --error --quiet {{files}}"
+  sast_weak_random:      "semgrep --config r/javascript.lang.security.audit.math-random-used --error --quiet {{files}}"
+  sast_xss:              "semgrep --config p/react --config r/javascript.browser.security --error --quiet {{files}}"
+  sast_deserialization:  "semgrep --config r/javascript.lang.security.audit.unsafe-eval --error --quiet {{files}}"
+  sast_log_leak:         "semgrep --config r/javascript.lang.security.audit.logging --error --quiet {{files}}"
+  sast_timeouts:         "semgrep --config r/javascript.lang.best-practice.fetch-timeout --error --quiet {{files}}"
+  dependency_audit:      "npm audit --audit-level=high --omit=dev"
+  lockfile_present:      "test -f package-lock.json -o -f pnpm-lock.yaml -o -f yarn.lock"
+  typecheck:             "npx tsc --noEmit"
+  lint:                  "npx eslint . --max-warnings=0"
+  test:                  "npm test --silent"
+  coverage:              "npx jest --coverage --coverageReporters=json-summary --coverageDirectory=.audit/reports"
+  a11y_scan:             "npx @axe-core/cli $AUDIT_TARGET_URL --exit --tags wcag2a,wcag2aa,wcag21aa,wcag22aa"
+  bundle_size:           "node scripts/bundle-report.js > .audit/reports/bundle.json"
+  lighthouse:            "npx lighthouse $AUDIT_TARGET_URL --output=json --output-path=.audit/reports/lh.json --quiet --chrome-flags='--headless'"
+  header_check:          "node scripts/header-check.js $AUDIT_TARGET_URL"
+  api_diff:              "npx @redocly/cli diff openapi.yaml origin/main:openapi.yaml --fail-on breaking"
+  migration_check:       "npx prisma migrate diff --exit-code 2>/dev/null || echo SKIP_NO_PRISMA"
+  load_test:             "SKIP"
+  ci_timing:             "SKIP"
+install_hint: "npm i -D semgrep @axe-core/cli lighthouse eslint typescript jest"

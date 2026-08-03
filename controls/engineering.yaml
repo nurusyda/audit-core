@@ -1,0 +1,335 @@
+# Backend / DevOps / Data / Quality.
+# No canonical public taxonomy exists for most of this, so these are house rules.
+# That's fine — write them once, they compound. Edit freely; they're yours.
+
+# ---------------- BACKEND ----------------
+
+- id: CTL-0200
+  title: Database migrations are reversible or explicitly marked irreversible
+  why: >
+    A migration you cannot roll back turns a bad deploy into an outage with no exit.
+    Irreversible ones are sometimes correct — but must be a decision, not an accident.
+  domain: backend
+  tier: tier1
+  owner_skill: senior-backend
+  severity: high
+  detect:
+    kind: command
+    adapter_key: migration_check
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0201
+  title: No N+1 query patterns introduced
+  why: >
+    Fine with 10 rows in dev, fatal with 100,000 in production. The classic bug that only
+    appears once you have real users.
+  domain: backend
+  tier: tier3
+  owner_skill: senior-backend
+  severity: high
+  detect:
+    kind: rubric
+    rubric: rubrics/api-design.md
+  introduced: v0.1.0
+
+- id: CTL-0202
+  title: External calls have explicit timeouts
+  why: >
+    A default-infinite timeout means one slow dependency exhausts your connection pool and
+    takes down services that never touched it. This is how outages cascade.
+  domain: backend
+  tier: tier1
+  owner_skill: senior-backend
+  severity: high
+  detect:
+    kind: command
+    adapter_key: sast_timeouts
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0203
+  title: API changes are backward compatible or versioned
+  why: >
+    Removing a field is a breaking change even if you think nobody uses it. Somebody uses it.
+  domain: backend
+  tier: tier1
+  owner_skill: senior-backend
+  severity: high
+  detect:
+    kind: command
+    adapter_key: api_diff
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0204
+  title: Write operations that can be retried are idempotent
+  why: >
+    Networks retry. Clients retry. Without idempotency keys the user gets charged twice and
+    you find out from support, not monitoring.
+  domain: backend
+  tier: tier3
+  owner_skill: senior-backend
+  severity: high
+  detect:
+    kind: rubric
+    rubric: rubrics/api-design.md
+  introduced: v0.1.0
+
+- id: CTL-0205
+  title: p95 latency on changed endpoints does not regress
+  why: >
+    Performance degrades in increments nobody notices until the aggregate is intolerable.
+    Ratcheting is the only defence.
+  domain: backend
+  tier: tier2
+  owner_skill: senior-backend
+  severity: medium
+  detect:
+    kind: metric
+    metric: p95_latency_ms
+    adapter_key: load_test
+    extract: "json:$.p95"
+    budget:
+      mode: ratchet
+      direction: lower_is_better
+      tolerance_pct: 10
+  blocking: false
+  introduced: v0.1.0
+
+# ---------------- DEVOPS ----------------
+
+- id: CTL-0300
+  title: Infrastructure-as-code passes policy scan
+  why: >
+    Public S3 buckets, 0.0.0.0/0 security groups, unencrypted volumes. Checkov catches all
+    three in under a second.
+  domain: devops
+  tier: tier1
+  owner_skill: senior-devops
+  severity: high
+  scope:
+    paths: ["**/*.tf", "**/*.yaml", "**/*.yml"]
+  detect:
+    kind: command
+    command: checkov -d . --quiet --compact --soft-fail-on LOW,MEDIUM
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0301
+  title: Container does not run as root
+  why: >
+    Root in a container plus one kernel or runtime bug equals root on the host. USER is one line.
+  domain: devops
+  tier: tier1
+  owner_skill: senior-devops
+  severity: high
+  cwe: [CWE-250]
+  scope:
+    paths: ["**/Dockerfile"]
+  detect:
+    kind: command
+    command: "grep -Eq '^\\s*USER\\s+(?!root)' {{files}} || echo 'DOCKERFILE_RUNS_AS_ROOT'"
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0302
+  title: Base images pinned by digest, not floating tag
+  why: >
+    ':latest' means your build is not reproducible and a compromised upstream tag ships
+    straight to production.
+  domain: devops
+  tier: tier1
+  owner_skill: senior-devops
+  severity: medium
+  scope:
+    paths: ["**/Dockerfile"]
+  detect:
+    kind: command
+    command: "! grep -Eq '^FROM .*:latest' {{files}}"
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0303
+  title: Every deployable change has a rollback path
+  why: >
+    "Roll forward" is a strategy, not a plan. At 3am you want one command.
+  domain: devops
+  tier: tier3
+  owner_skill: senior-devops
+  severity: high
+  detect:
+    kind: rubric
+    rubric: rubrics/operability.md
+  introduced: v0.1.0
+
+- id: CTL-0304
+  title: New services emit health, error rate, and latency signals
+  why: >
+    If it isn't instrumented at deploy time it won't be instrumented during the incident.
+  domain: devops
+  tier: tier3
+  owner_skill: senior-devops
+  severity: medium
+  detect:
+    kind: rubric
+    rubric: rubrics/observability.md
+  introduced: v0.1.0
+
+- id: CTL-0305
+  title: CI pipeline runtime does not regress
+  why: >
+    Slow CI is not an inconvenience, it's a behaviour change — people batch commits and
+    stop running things locally.
+  domain: devops
+  tier: tier2
+  owner_skill: senior-devops
+  severity: low
+  detect:
+    kind: metric
+    metric: ci_duration_s
+    adapter_key: ci_timing
+    extract: "json:$.duration_seconds"
+    budget:
+      mode: ratchet
+      direction: lower_is_better
+      tolerance_pct: 20
+  blocking: false
+  introduced: v0.1.0
+
+# ---------------- DATA ----------------
+
+- id: CTL-0400
+  title: Personal data fields are tagged and their retention is defined
+  why: >
+    You cannot honour a deletion request against data you cannot locate. Tagging at write
+    time is the only version of this that works.
+  domain: data
+  tier: tier3
+  owner_skill: senior-data
+  severity: high
+  detect:
+    kind: rubric
+    rubric: rubrics/data-handling.md
+  introduced: v0.1.0
+
+- id: CTL-0401
+  title: Personal or secret data is not written to logs
+  why: >
+    Logs go to third-party aggregators, get retained for years, and are readable by far more
+    people than the database is. This is a top source of accidental breach.
+  domain: data
+  tier: tier1
+  owner_skill: senior-data
+  severity: high
+  cwe: [CWE-532]
+  detect:
+    kind: command
+    adapter_key: sast_log_leak
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0402
+  title: Schema changes preserve the ability to read existing data
+  why: >
+    Non-additive schema change with old data still in flight is a data-loss event, and it
+    is usually silent.
+  domain: data
+  tier: tier3
+  owner_skill: senior-data
+  severity: critical
+  detect:
+    kind: rubric
+    rubric: rubrics/data-handling.md
+  introduced: v0.1.0
+
+# ---------------- QUALITY ----------------
+
+- id: CTL-0500
+  title: Type check passes with no errors
+  why: >
+    Types are the cheapest test you will ever write and they run in milliseconds.
+  domain: quality
+  tier: tier1
+  owner_skill: senior-qa
+  severity: high
+  detect:
+    kind: command
+    adapter_key: typecheck
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0501
+  title: Linter passes with no errors
+  domain: quality
+  tier: tier1
+  owner_skill: senior-qa
+  severity: medium
+  why: Consistency is a real cost saver, and most lint rules encode a bug someone shipped.
+  detect:
+    kind: command
+    adapter_key: lint
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0502
+  title: Test suite passes
+  domain: quality
+  tier: tier1
+  owner_skill: senior-qa
+  severity: critical
+  why: Self-evident, but worth having as an explicit gated control with a recorded artifact.
+  detect:
+    kind: command
+    adapter_key: test
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0503
+  title: Test coverage does not regress
+  why: >
+    Absolute coverage targets on an existing codebase mean red forever. Ratcheting means
+    new code carries tests without a rewrite mandate.
+  domain: quality
+  tier: tier2
+  owner_skill: senior-qa
+  severity: medium
+  detect:
+    kind: metric
+    metric: coverage_pct
+    adapter_key: coverage
+    extract: "json:$.totals.percent_covered"
+    budget:
+      mode: ratchet
+      direction: higher_is_better
+      tolerance_pct: 1
+  blocking: true
+  introduced: v0.1.0
+
+- id: CTL-0504
+  title: Changed behaviour has a test that fails without the change
+  why: >
+    A test that passes before and after the fix tests nothing. This is the single most
+    common defect in AI-written tests specifically.
+  domain: quality
+  tier: tier3
+  owner_skill: senior-qa
+  severity: high
+  detect:
+    kind: rubric
+    rubric: rubrics/test-quality.md
+  introduced: v0.1.0
+
+- id: CTL-0505
+  title: Implementation matches the agreed spec
+  why: >
+    Scope drift is the most expensive failure mode in agent-driven work — the code is
+    correct, tested, secure, and not what was asked for.
+  domain: architecture
+  tier: tier3
+  owner_skill: principal-architect
+  severity: high
+  detect:
+    kind: rubric
+    rubric: rubrics/spec-conformance.md
+  introduced: v0.1.0

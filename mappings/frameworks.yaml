@@ -1,0 +1,142 @@
+# Frameworks are FILTERS over the control set, never separate checks.
+# Enabling "pci-dss" in .audit/config.yaml selects the controls listed here and surfaces
+# that framework's attestation checklist. This is why "all frameworks" is affordable.
+#
+# Honest coverage note, and please read it before quoting compliance percentages:
+# a control listed here is *evidence toward* a framework requirement, not proof of it.
+# SOC 2 is an audit of your organisation, not your repo. This system gives an auditor
+# real artifacts; it does not give you a certificate.
+
+owasp-asvs-L1:
+  name: OWASP ASVS 4.0.3 Level 1
+  description: Baseline. Achievable by every application. Verifiable entirely by testing.
+  controls: [CTL-0001, CTL-0002, CTL-0003, CTL-0004, CTL-0005, CTL-0008, CTL-0009,
+             CTL-0010, CTL-0011, CTL-0012, CTL-0014, CTL-0015]
+
+owasp-asvs-L2:
+  name: OWASP ASVS 4.0.3 Level 2
+  description: Standard for applications handling sensitive data. The sensible default.
+  extends: owasp-asvs-L1
+  controls: [CTL-0006, CTL-0007, CTL-0013, CTL-0017, CTL-0018, CTL-0401]
+
+owasp-asvs-L3:
+  name: OWASP ASVS 4.0.3 Level 3
+  description: Highest assurance — medical, military, critical infrastructure.
+  extends: owasp-asvs-L2
+  controls: [CTL-0092, CTL-0400, CTL-0402]
+
+owasp-top10-2021:
+  name: OWASP Top 10 2021
+  description: Awareness document, not a standard. Included for reporting familiarity.
+  control_map:
+    A01_broken_access_control: [CTL-0006, CTL-0007, CTL-0013]
+    A02_cryptographic_failures: [CTL-0008, CTL-0009, CTL-0010]
+    A03_injection: [CTL-0002, CTL-0003, CTL-0011]
+    A04_insecure_design: [CTL-0018, CTL-0505]
+    A05_security_misconfiguration: [CTL-0014, CTL-0300, CTL-0301, CTL-0302]
+    A06_vulnerable_components: [CTL-0004, CTL-0005, CTL-0016]
+    A07_auth_failures: [CTL-0008, CTL-0018]
+    A08_integrity_failures: [CTL-0005, CTL-0012, CTL-0302]
+    A09_logging_failures: [CTL-0017, CTL-0304, CTL-0401]
+    A10_ssrf: [CTL-0013]
+
+mitre-attack:
+  name: MITRE ATT&CK Enterprise
+  description: >
+    Threat-actor behaviour, NOT a code checklist. Mapped here at the mitigation level so
+    findings can be discussed in threat-model terms. Do not treat coverage here as
+    detection coverage — that lives in your SIEM, not your repo.
+  technique_map:
+    T1190_exploit_public_facing: [CTL-0002, CTL-0003, CTL-0011, CTL-0012, CTL-0004]
+    T1078_valid_accounts: [CTL-0001, CTL-0008, CTL-0018, CTL-0090]
+    T1552_unsecured_credentials: [CTL-0001, CTL-0401]
+    T1195_supply_chain: [CTL-0004, CTL-0005, CTL-0016, CTL-0302]
+    T1210_exploit_remote_services: [CTL-0013, CTL-0300]
+    T1611_container_escape: [CTL-0301, CTL-0016]
+    T1485_data_destruction: [CTL-0092, CTL-0200]
+
+soc2:
+  name: SOC 2 Trust Services Criteria
+  description: >
+    An organisational audit. These controls produce evidence for it; they do not satisfy it.
+  criteria_map:
+    CC6.1_logical_access: [CTL-0006, CTL-0007, CTL-0090]
+    CC6.6_external_threats: [CTL-0014, CTL-0300, CTL-0018]
+    CC6.7_data_transmission: [CTL-0009, CTL-0014]
+    CC7.1_vulnerability_detection: [CTL-0004, CTL-0016, CTL-0002]
+    CC7.2_monitoring: [CTL-0017, CTL-0304]
+    CC7.4_incident_response: [CTL-0091]
+    CC8.1_change_management: [CTL-0203, CTL-0303, CTL-0502, CTL-0505]
+    A1.2_backup: [CTL-0092]
+
+iso-27001:
+  name: ISO/IEC 27001:2022 Annex A
+  control_map:
+    A.8.28_secure_coding: [CTL-0002, CTL-0003, CTL-0011, CTL-0012]
+    A.8.24_cryptography: [CTL-0008, CTL-0009, CTL-0010]
+    A.8.8_vulnerability_mgmt: [CTL-0004, CTL-0016]
+    A.8.15_logging: [CTL-0017, CTL-0401]
+    A.5.15_access_control: [CTL-0006, CTL-0007, CTL-0090]
+    A.8.13_backup: [CTL-0092]
+    A.5.26_incident_response: [CTL-0091]
+
+pci-dss-4:
+  name: PCI DSS v4.0
+  description: Applies ONLY if you store, process, or transmit cardholder data.
+  requirement_map:
+    "3_protect_stored_data": [CTL-0009, CTL-0401, CTL-0400]
+    "6.2_secure_development": [CTL-0002, CTL-0003, CTL-0011, CTL-0012, CTL-0004]
+    "6.3_vulnerability_mgmt": [CTL-0004, CTL-0016]
+    "7_restrict_access": [CTL-0006, CTL-0007]
+    "8_authentication": [CTL-0008, CTL-0018]
+    "10_logging": [CTL-0017, CTL-0401]
+    "12.10_incident_response": [CTL-0091]
+
+hipaa:
+  name: HIPAA Security Rule
+  description: Applies ONLY if you handle protected health information.
+  safeguard_map:
+    "164.312a_access_control": [CTL-0006, CTL-0007, CTL-0090]
+    "164.312b_audit_controls": [CTL-0017, CTL-0401]
+    "164.312e_transmission_security": [CTL-0009, CTL-0014]
+    "164.308a7_contingency": [CTL-0092, CTL-0091]
+
+gdpr:
+  name: GDPR
+  description: >
+    Mostly a process and legal-basis regime. Very little of it is checkable in code —
+    which is exactly why most of these are attestations.
+  article_map:
+    art5_data_minimisation: [CTL-0400]
+    art17_right_to_erasure: [CTL-0400, CTL-0093]
+    art25_privacy_by_design: [CTL-0400, CTL-0401]
+    art30_records_of_processing: [CTL-0093]
+    art32_security_of_processing: [CTL-0008, CTL-0009, CTL-0004, CTL-0092]
+    art33_breach_notification: [CTL-0091, CTL-0017]
+
+nist-800-53r5:
+  name: NIST SP 800-53 Rev 5 (subset)
+  description: >
+    ~1000 controls in full. Seeded here with the technical families only. Do not enable
+    this expecting completeness — enable it when a contract names it, and expect to
+    extend the map yourself.
+  control_map:
+    SI-10_input_validation: [CTL-0002, CTL-0003, CTL-0011, CTL-0012]
+    SC-13_cryptographic_protection: [CTL-0008, CTL-0009, CTL-0010]
+    RA-5_vulnerability_scanning: [CTL-0004, CTL-0016]
+    AC-3_access_enforcement: [CTL-0006, CTL-0007]
+    AU-2_audit_events: [CTL-0017]
+    CM-2_baseline_configuration: [CTL-0302, CTL-0300]
+    CP-9_system_backup: [CTL-0092]
+
+wcag-2.2-AA:
+  name: WCAG 2.2 Level AA
+  description: >
+    The legal baseline in the EU (EN 301 549), US (Section 508 / ADA case law), and most
+    public-sector procurement. Automated scanning covers ~35% of it; the rest is CTL tier3.
+  controls: [CTL-0100, CTL-0101, CTL-0102, CTL-0103, CTL-0104, CTL-0114]
+
+dora-metrics:
+  name: DORA delivery metrics
+  description: Not compliance — delivery health. Useful to track alongside.
+  controls: [CTL-0305, CTL-0303, CTL-0502]
