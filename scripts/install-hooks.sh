@@ -20,7 +20,7 @@ export AUDIT_CORE="$CORE"
 echo "  running local gate…"
 
 if command -v gitleaks >/dev/null 2>&1; then
-  if ! gitleaks protect --staged --no-banner --redact; then
+  if ! gitleaks git --staged --no-banner --redact .; then
     echo ""
     echo "  BLOCKED: a secret was detected in your staged changes."
     echo "  Remove it. If it was ever committed before, see:"

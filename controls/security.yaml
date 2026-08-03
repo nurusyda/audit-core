@@ -13,7 +13,7 @@
   cwe: [CWE-798, CWE-540]
   detect:
     kind: command
-    command: gitleaks detect --no-banner --redact --exit-code 1
+    command: gitleaks git --no-banner --redact --exit-code 1 .
   blocking: true
   remediation: rubrics/secrets-remediation.md
   introduced: v0.1.0
