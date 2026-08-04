@@ -1,0 +1,84 @@
+{
+  "$comment": [
+    "Enforcement layer. Everything in CLAUDE.md is an INSTRUCTION an agent can ignore;",
+    "everything here is a RULE it cannot. Deny beats allow at every scope, and per the",
+    "Claude Code docs a deny rule blocks the tool even in bypassPermissions mode.",
+    "",
+    "SYNTAX NOTE, and this one is load-bearing: Edit(path) governs ALL file-writing",
+    "tools including Write and NotebookEdit. A Write(path) rule is NEVER matched by the",
+    "file permission checks — writing Write(.audit/approval.json) here would be a silent",
+    "no-op that looks like protection and provides none. Use Edit() only.",
+    "",
+    "The single leading slash anchors at the project root. // would mean a true",
+    "absolute filesystem path.",
+    "",
+    "Run runner/integrity.py to verify these rules are present and unweakened."
+  ],
+
+  "permissions": {
+    "deny": [
+      "Edit(/.audit/approval.json)",
+      "Edit(/.audit/last-run.json)",
+      "Edit(/.audit/coherence.json)",
+      "Edit(/.audit/reports/semantic-review.json)",
+      "Edit(/.audit/baselines/**)",
+      "Edit(/.git/hooks/**)",
+      "Edit(/.claude/settings.json)",
+
+      "Bash(git commit --no-verify*)",
+      "Bash(git commit -n *)",
+      "Bash(git push --no-verify*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf .git*)",
+      "Bash(chmod -x .git/hooks/*)",
+
+      "Bash(*gates.py approve*)",
+      "Bash(make approve*)",
+
+      "Read(/.env)",
+      "Read(/.env.*)",
+      "Read(/**/secrets/**)",
+      "Read(/**/*.pem)",
+      "Read(/**/*.key)"
+    ],
+
+    "ask": [
+      "Edit(/.audit/waivers.yaml)",
+      "Edit(/.audit/config.yaml)",
+      "Edit(/.audit/decisions.yaml)",
+      "Edit(/.pre-commit-config.yaml)",
+      "Edit(/.github/workflows/**)",
+      "Bash(git push*)"
+    ],
+
+    "allow": [
+      "Bash(make audit*)",
+      "Bash(make coherence*)",
+      "Bash(make report*)",
+      "Bash(make where*)",
+      "Bash(make status*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)"
+    ]
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/guard.py"
+          }
+        ]
+      }
+    ]
+  }
+}

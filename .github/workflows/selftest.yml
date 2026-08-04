@@ -16,7 +16,8 @@ jobs:
 
       - name: Guard hook regression suite
         run: |
-          git clone --depth 1 https://github.com/nurusyda/project-template.git /tmp/pt
+          mkdir -p /tmp/pt/.claude/hooks
+          cp templates/claude/hooks/guard.py /tmp/pt/.claude/hooks/
           python3 tests/test_guard.py /tmp/pt
 
       - name: All runners compile
