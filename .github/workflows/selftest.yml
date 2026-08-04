@@ -14,8 +14,19 @@ jobs:
       - name: Grounding verifier regression suite
         run: python3 tests/test_grounding.py
 
-      - name: Smoke-test the runner
+      - name: Guard hook regression suite
         run: |
-          git config user.email ci@test && git config user.name CI
-          python3 runner/audit.py --config /dev/null 2>&1 | grep -q "no config" \
-            && echo "runner handles a missing config correctly"
+          git clone --depth 1 https://github.com/nurusyda/project-template.git /tmp/pt
+          python3 tests/test_guard.py /tmp/pt
+
+      - name: All runners compile
+        run: python3 -m py_compile runner/*.py
+
+      - name: Runner fails closed on a missing config
+        run: |
+          # Must exit non-zero. A runner that shrugs at a missing config would
+          # silently audit nothing and report success.
+          if python3 runner/audit.py --config .audit/does-not-exist.yaml; then
+            echo "FAIL: runner exited 0 with no config"; exit 1
+          fi
+          echo "OK: runner refused to run without a config"
