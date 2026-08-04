@@ -80,6 +80,16 @@ PY
 )
 
   echo "loop: sending correction prompt to Claude Code…"
+  # acceptEdits auto-approves file operations, which means permission callbacks are
+  # skipped for them. The deny rules in .claude/settings.json and the PreToolUse guard
+  # still apply — a deny blocks even in bypassPermissions — so evidence files, gate
+  # bypasses, and self-approval remain closed during autonomous rounds.
+  # Verify before looping: a missing settings.json means the loop runs unguarded.
+  if ! python3 "$CORE/runner/integrity.py" >/dev/null 2>&1; then
+    echo "loop: REFUSING to run — permission enforcement is not intact."
+    python3 "$CORE/runner/integrity.py"
+    exit 2
+  fi
   echo "$PROMPT" | claude -p --permission-mode acceptEdits || {
     echo "loop: claude invocation failed"; exit 2; }
 done
